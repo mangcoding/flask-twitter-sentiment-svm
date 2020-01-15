@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Twitter Sentiment | Home</title>
+    <link rel="icon" href={{ url_for('static', filename='logo.png') }}>
+    <script src={{ url_for('static', filename='jquery-3.4.1.min.js') }} type="text/javascript"></script>
+    <script src={{ url_for('static', filename='bootstrap.bundle.min.js') }}></script>
+    <link href={{ url_for('static', filename='bootstrap4.min.css') }} rel="stylesheet">
+	<link href={{ url_for('static', filename='all.css') }} rel="stylesheet">
+    <script src={{ url_for('static', filename='bootstrap4.min.js') }}></script>
+</head>
+<body style="background-color: #E9EBEE">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <a class="navbar-brand" href="#">
+            <img src={{ url_for('static', filename='logo_white.png') }} width="30" height="30" class="d-inline-block align-top" alt="">
+            Twitter Sentiment Analysis
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href={{ url_for("home") }}>Timeline <span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="model_butt" data-toggle="modal" data-target="#modal-info-model" href="#">Model</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="dataset_butt" data-toggle="modal" data-target="#modal-info-dataset" href="#">Dataset</a>
+                </li>
+            </ul>
+            <span class="navbar-text">
+                <a id="query_butt" data-toggle="modal" data-target="#modal-add" href="#"> + Add Test </a>&nbsp;&nbsp;&nbsp; <br>
+            </span>
+            <span class="navbar-text">
+                <a id="query_butt" data-toggle="modal" data-target="#modal-query" href="#"> Query </a>&nbsp;&nbsp;&nbsp; <br>
+            </span>
+            <span class="navbar-text">
+                <a href={{ url_for("logout") }}></i> Logout </a> <br>
+            </span>
+        </div>
+    </nav>
+
+    {% for i,tweet in enumerate(tweets) %}
+    <div class='row' style="padding-top: 10px; padding-bottom: 10px">
+        <div class="col-md-8" style="padding-left:200px;padding-right:10px;">
+            <div class="card bg-light">
+                <div class="card-header text-white" style="background-color: #56a6fc;">
+                    <div class="row">
+                        <div style="padding-left: 10px; padding-top: 4px; padding-right: 10px;">
+                            <img src={{ tweet.pict }} class="d-inline-block align-top" alt="">
+                        </div>
+                        <div>
+                            <h5>{{ tweet.name }}</h5>
+                            <h7>{{ tweet.username }}</h7>
+                        </div>
+                    </div>
+                    <i style="font-size: x-small;">{{ tweet.created_at }}</i>
+                </div>
+                <div class="card-body">
+                    {{ tweet.text }}
+                </div>
+            </div>
+        </div>
+        <input type="hidden" id="tweet_{{ i }}" value="{{ tweet.text }}">
+        
+        <div class="col-sm" style="padding-left:10px;padding-right:120px;">
+            <div class="card text-white" style="width: 10rem;">
+                {% if tweet.sentiment.sentiment == 'Negative' %}
+                <div class="card-header text-white" style="background-color: #ffffff;">
+                    <center><img src={{ url_for('static', filename='negative.png') }}  width="60" height="60"></center>
+                </div>
+                <div class="card-body text-white" style="background-color: #DC4333">
+                    <center><a style="color:#ffffff;">Negative</a></center>
+                    <center>{{ int(tweet.sentiment.negative*100) }}%</center>
+                    <div style="width: {{ int(tweet.sentiment.negative*100) }}%;height: 2px;border-style: solid;border-color: white;background-color: white"></div>
+                    <p></p>
+                    <center><a data-toggle="modal" data-target="#modal-info-tweet" href="#" onclick="detail('{{ i }}');" style="color:#ffffff;"> ! </i> Detail </a></center>
+                </div>
+                {% else %}
+                <div class="card-header text-white" style="background-color: #ffffff;">
+                    <center><img src={{ url_for('static', filename='positive.png') }}  width="60" height="60"></center>
+                </div>
+                <div class="card-body text-white" style="background-color: #8CA71D">
+                    <center><a style="color:#ffffff;">Positive</a></center>
+                    <center><i>{{ int(tweet.sentiment.positive*100) }} %</i></center>
+                    <div style="width: {{ int(tweet.sentiment.positive*100) }}%;height: 2px;border-style: solid;border-color: white;background-color: white"></div>
+                    <p></p>
+                    <center><a data-toggle="modal" data-target="#modal-info-tweet" href="#" onclick="detail('{{ i }}');" style="color:#ffffff;"> ! </i> Detail </a></center>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <hr style="margin-left: 180px; margin-right: 280px;">
+    {% endfor %}
+
+    <div class="modal fade bd-example-modal-md" id="modal-add" role="dialog">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content">
+                <div class="modal-header" style="padding:15px 50px;">
+                    <h6><span class="fa fa-info"></span> Add testing sentence</h6>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body" style="padding:15px 50px;">
+                    <label for="sentence"><h6>Sentence</h6></label>
+                    <textarea class="form-control" id="sentence"></textarea><p></p>
+
+                    <div id="detail-predict">
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="predict()" >Predict</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade bd-example-modal-sm" id="modal-query" role="dialog">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header" style="padding:15px 50px;">
+                    <h6><span class="fa fa-info"></span> Query Settings</h6>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body" style="padding:15px 50px;">
+                    <label for="query"><h6>Query</h6></label>
+                    <textarea class="form-control" id="query">{{ query.q }}</textarea><p></p>
+                    <label for="filter"><h6>Filter</h6></label>
+                    <input type="text" class="form-control" id="filter" value={{ query.filter }}><p></p>
+                    <label for="count"><h6>Count</h6></label>
+                    <input type="number" class="form-control" id="count" value={{ query.rpp }}><br>
+
+                    <input type="hidden" id="r_t" value={{ query.r_t }}>
+                    <input type="radio" name="type" id="type" value="recent"> Recent<p></p>
+                    <input type="radio" name="type" id="type" value="popular"> Popular
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="set_query()" >Save</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade bd-example-modal-xl" id="modal-info-tweet" role="dialog">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header" style="padding:15px 50px;">
+                    <h4><span class="fa fa-info"></span> Statement Info</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body" style="padding:15px 50px;">
+                    <form role="form">
+                        <div id="detail-list">
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade bd-example-modal-md" id="modal-info-model" role="dialog">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content">
+                <div class="modal-header" style="padding:15px 50px;">
+                    <h4><span class="fa fa-info"></span> Model Info</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body" style="padding:15px 50px;">
+                    <form role="form">
+                        <div class="form-group">
+                            <h6>Model type :</h6>Support Vector Machine<p></p>
+                            <h6>Model score :</h6><p></p>
+                            Accuracy : {{ float("{0:.2f}".format(score.accuracy)) * 100 }} % <br>
+                            Precision : {{ float("{0:.2f}".format(score.precision)) * 100}} %<br>
+                            Recall : {{ float("{0:.2f}".format(score.recall)) * 100}} %<br>
+                            F1 : {{ float("{0:.2f}".format(score.f1)) * 100}} %<br><p></p>
+                            <h6>Confusion Matrix</h6>
+                            <center><img src={{ url_for('static', filename= score.cm) }} style="width: 420px; height: 350px"></center>
+
+                        </div>
+                        
+                        <div class='alert alert-success alert-dismissible' id="notif1">
+                            <a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>
+                            <strong>Success!</strong> Model has been re-trained, please reload the page.
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="retrain()" >Re-Train</button>
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade bd-example-modal-xl" id="modal-info-dataset" role="dialog">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header" style="padding:15px 50px;">
+                    <h4><span class="fa fa-info"></span> Dataset</h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body" style="padding:15px 50px;">
+                    <table class="table" style="max-height: 500px;overflow:auto;display: inline-block;">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Tweet</th>
+                                <th scope="col">Label</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataset-list">
+                        </tbody>
+                    </table>
+                    <i>0 = Negative <br> 1 = Positive</i>
+                    <p></p>
+                    <br>
+                    <h6>Add Sentence to Dataset</h6>
+                    <div class="row">
+                        <div class="col-sm" style="padding-left:15px;padding-right:10px;padding-top:10px;">
+                            <input type="text" class="form-control" id="tweet" style="width: 55em" placeholder="Tweet">
+                        </div>
+                        <div class="form-group">
+                            <select class="form-control" name="label" id="label" size="2" multiple>
+                                <option value="0">Negative</option>
+                                <option value="1">Positive</option>
+                            </select>   
+                        </div>
+                        <div class="col-sm" style="padding-left:5px;padding-right:10px;padding-top:10px;">
+                            <div class="input-group-btn">
+                                <button class="btn btn-info" onclick="add_dataset()">Tambah Dataset</i>
+                                </button>
+                            </div>    
+                        </div>
+                    </div><br>
+
+                    <div class='alert alert-success alert-dismissible' id="notif2">
+                        <a href='#' class='close' data-dismiss='alert' aria-label='close'>&times;</a>
+                        <strong>Success!</strong> Data added and partial training done.
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <!--<button type="button" class="btn btn-primary" onclick="update()" >Save changes</button>-->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+
+    var dialog1 = document.getElementById("notif1");
+
+    var dialog2 = document.getElementById("notif2");
+
+    $("#dataset_butt").click(function(){
+        dialog2.style.display = "none";
+        get_dataset();
+    });
+
+    $("#model_butt").click(function(){
+        dialog1.style.display = "none";
+    });
+
+    var r = $('#r_t').val();
+    all = document.getElementsByTagName("input");
+    for(i=0; i<all.length; i++){
+        if(all[i].type == 'radio' && all[i].value == r){
+            all[i].checked = true;
+        }
+    }
+
+    function predict(){
+        var r = $('#sentence').val();
+        $.getJSON($SCRIPT_ROOT + '/test_predict', {
+            sentence: r
+        }, function(data) {
+            s = data.result;
+            html = "";
+            
+            html += "<h6>Sentimen</h6><h7>"+s.sentiment+"</h7><p></p>"
+            html += "<h6>Negative Probability</h6><h7>"+(s.negative).toFixed(2)*100+"%</h7><p></p>"
+            html += "<h6>Positive Probability</h6><h7>"+(s.positive).toFixed(2)*100+"%</h7><p></p>"
+            $('#detail-predict').html(html);
+        });
+    }
+
+    function retrain(){
+        $.ajax({
+            type: 'POST',
+            contentType: 'application/json',
+            dataType: 'json',
+            url: $SCRIPT_ROOT + '/retrain',
+            success: function (e) {
+                dialog1.style.display = "block";
+            }
+        });
+    }
+
+    function get_dataset(){
+        $.getJSON($SCRIPT_ROOT + '/get_dataset', {
+            key: "hehe"
+        }, function(data) {
+            dataset = data.dataset;
+            html = "";
+            
+            for(i=0; i<dataset.length; i++){
+                html += '<tr><th scope="row">'+(i+1).toString()+'</th>';
+                html += '<th>'+ dataset[i].tweet +'</th>';
+                html += '<th>'+ dataset[i].label +'</th></tr>';
+            }
+            $('#dataset-list').html(html);
+        });
+    }
+
+    function diff(b, a){
+        ar_b = b.split(" ");
+        ar_a = a.split(" ");
+
+        ar_b = ar_b.filter(function(e){return e}); 
+        ar_a = ar_a.filter(function(e){return e}); 
+        
+        ret = "<i>";
+
+        for(i=0;i<ar_a.length;i++){
+            if(ar_a[i] == ar_b[i]){
+                ret += ar_a[i] + " ";
+            }else{
+                ret += "<i style='background-color: chartreuse'>" + ar_a[i] +"</i> ";
+            }
+        }
+        ret += "</i>";
+        return ret;
+    }
+
+    function token(s){
+        var tok = s.split(" ");
+        tok = tok.filter(function(e){return e}); 
+        var re = "{";
+        for(i=0; i<tok.length; i++){
+            if(i == (tok.length)-1){
+                re += "'" + tok[i] + "'";
+            }else{
+                re += "'" + tok[i] + "'"+", ";
+            }
+        }
+        re += ' }';
+        return re;
+    }
+
+    function detail(id){
+        var tweet = $('#tweet_'+id).val();
+        $.getJSON($SCRIPT_ROOT + '/tweet_detail', {
+            tweet: tweet
+        }, function(data) {
+            var detail = data.result;
+            html = "";
+
+            html += '<h6>Original: </h6><i>'+detail.original+"</i><p></p>"
+            html += '<h6>Remove pattern: </h6><i>'+ detail.remove_symbol +'</i><p></p>'
+            html += '<h6>Tokenize: </h6><i>'+ token(detail.remove_symbol) +'</i><p></p>'
+            html += '<h6>Remove number and symbol: </h6><i>'+ detail.remove_number +'</i><p></p>'
+            html += '<h6>Set to lower:</h6><i>'+ detail.lower +'</i><p></p>'
+            html += '<h6>Normalization: </h6>'+ diff(detail.remove_number,detail.normalization) +'<p></p>'
+            html += '<h6>Stemming: </h6>'+ diff(detail.normalization, detail.stem) +'<p></p>'
+            html += '<h6>Remove stopword: </h6><i>'+ detail.hasil +'</i><p></p>'
+            html += '<h6>TF-IDF: </h6>'
+            html += '<center><table class="table" style="max-height: 500px;overflow:auto;display: inline-block;"><thead class="thead-dark"><tr><th scope="col">Word</th><th scope="col">Weight</th></tr></thead><tbody>'
+            for(i in detail.vec){
+                html += '<tr><th>'+ i +'</th>';
+                html += '<th>'+ detail.vec[i] +'</th></tr></center>';
+            }
+            html += '</tbody></table>'
+
+            $('#detail-list').html(html);
+        });
+    }
+
+    function set_query(){
+        var q = $('#query').val();
+        var f = $('#filter').val();
+        var c = $('#count').val();
+        var t;
+
+        all = document.getElementsByTagName("input");
+
+        for(i=0; i<all.length; i++){
+            if(all[i].type == 'radio' && all[i].checked){
+                t = all[i].value;
+            }
+        }
+
+        console.log(t);
+
+        $.ajax({
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify([q, f, c, t]),
+            dataType: 'json',
+            url: $SCRIPT_ROOT + '/set_query',
+            success: function (e) {
+                setTimeout('window.location = $SCRIPT_ROOT + "/home"', 100);
+            }
+        });
+    }
+
+    function add_dataset(){
+        var t = $('#tweet').val();
+        var l = $('#label').val();
+
+        $.ajax({
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify([t, Number(l)]),
+            dataType: 'json',
+            url: $SCRIPT_ROOT + '/add_to_dataset',
+            success: function (e) {
+                dialog2.style.display = "block";
+                $('#tweet').val("");
+                $('#label').val("");
+                get_dataset();
+            }
+        });
+    }
+</script>

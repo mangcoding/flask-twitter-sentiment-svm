@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Twitter Sentiment | Login</title>
+    <link rel="icon" href={{ url_for('static', filename='logo.png') }}>
+    <script src={{ url_for('static', filename='jquery-3.4.1.min.js') }} type="text/javascript"></script>
+    <script src={{ url_for('static', filename='bootstrap.bundle.min.js') }}></script>
+    <script src={{ url_for('static', filename='jquery.cookies.js') }}></script>
+    <link href={{ url_for('static', filename='bootstrap4.min.css') }} rel="stylesheet">
+	<link href={{ url_for('static', filename='all.css') }} rel="stylesheet">
+    <script src={{ url_for('static', filename='bootstrap4.min.js') }}></script>
+</head>
+<body>
+    <center>
+        <br>
+        <div class="card text-white bg-primary" style="width: 23rem;">
+            <br>
+            <img src={{ url_for('static', filename='logo_white.png') }} class="card-img-top" style="width:100px;height:100px;">
+            <div class="card-body">
+                <h5 class="card-title">Twitter Sentiment Analysist</h5>
+                <input type="input" class="form-control" id="consumer_key" placeholder="Consumer Key" value="4aXRY99qmF7zl3y5B34U2RphK"><p></p>
+                <input type="password" class="form-control" id="consumer_secret" placeholder="Consumer Secret" value="h4hUdT0cSzPkFXHS6S8yjH1Ojt64fJpojan4hjhJ2QM9DnrZqK"><p></p>
+                <input type="input" class="form-control" id="access_token" placeholder="Access Token" value="806768261132009472-pdpsT16HstFp7cwpaOq7VC8YwljttUm"><p></p>
+                <input type="password" class="form-control" id="access_token_secret" placeholder="Access Token Secret" value="DJynlvNM4z5SkYUTIaQjRNvUpAj4UcjM4cvuIAiy6VhIL"><p></p>
+                <input id="rememberChkBox" type="checkbox"> Remember me <p></p>
+                <button onclick="auth()" type="button" class="btn btn-light">Login</button><p></p>
+                <div class="alert alert-danger alert-dismissible" role="alert" name="dia" id="dia">
+                    <div name="mess" id="mess"></div>
+                </div>
+            </div>
+        </div>
+    </center> 
+</body>
+<script>
+    $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    
+    var dialog = document.getElementById("dia");
+    dialog.style.display = "none";
+
+    $(document).ready(function() {
+        fillByMemory();
+    })
+
+    function auth(){
+        if($('#rememberChkBox').val()){
+            rememberMe();
+        }
+        var consumer_key = $('#consumer_key').val();
+        var consumer_secret = $('#consumer_secret').val();
+        var access_token = $('#access_token').val();
+        var access_token_secret = $('#access_token_secret').val();
+
+        var maa = document.querySelector("#mess");
+
+        $.getJSON($SCRIPT_ROOT + '/check_auth', {
+            consumer_key: consumer_key,
+            consumer_secret: consumer_secret,
+            access_token: access_token,
+            access_token_secret: access_token_secret
+        }, function(data) {
+            if(data.result == "Success"){
+                setTimeout('window.location = $SCRIPT_ROOT + "/home";', 100);
+            }else{
+                dialog.style.display = "block";
+                maa.innerHTML = '<span>'+ data.result +'</span>';
+            }
+        });
+    }
+
+    function rememberMe(){
+        $.cookie('consumer_key',$('#consumer_key').val());
+        $.cookie('consumer_secret',$('#consumer_secret').val());
+        $.cookie('access_token',$('#access_token').val());
+        $.cookie('access_token_secret',$('#access_token_secret').val());
+
+        $.cookie('enb',true);
+    }
+
+    function fillByMemory(){
+        if(!!$.cookie('consumer_key'))
+            $('#consumer_key').val($.cookie('consumer_key'));
+
+        if(!!$.cookie('consumer_secret'))
+            $('#consumer_secret').val($.cookie('consumer_secret'));
+        
+        if(!!$.cookie('access_token'))
+            $('#access_token').val($.cookie('access_token'));
+
+        if(!!$.cookie('access_token_secret'))
+            $('#access_token_secret').val($.cookie('access_token_secret'));
+        
+        if(!!$.cookie('enb'))
+            $('#rememberChkBox').prop("checked", true);
+    }
+</script>
